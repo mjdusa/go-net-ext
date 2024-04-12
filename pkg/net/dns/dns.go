@@ -10,6 +10,7 @@ import (
 type FullAddress struct {
 	Address string
 	Hosts   []string
+	Error   error
 }
 
 type FullHostResponse struct {
@@ -44,7 +45,7 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 
 	timeout := time.Millisecond * time.Duration(response.TimeoutMS)
 
-	// create a custom resolver
+	// Create a custom resolver.
 	resolver := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
@@ -85,10 +86,7 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 	return &response, nil
 }
 
-// DomainLookup
-// network must be one of "ip", "ip4" or "ip6"
-// service ""
-// protocol must be one of "tcp" or "udp"
+// DomainLookup - network must be one of "ip", "ip4" or "ip6", service "", protocol must be one of "tcp" or "udp".
 func DomainLookup(ctx context.Context, domainName string, network string, service string, protocol string,
 	lookupNameServer string, timeoutMS int64) (*FullDomainResponse, error) {
 	var err error = nil
@@ -105,24 +103,9 @@ func DomainLookup(ctx context.Context, domainName string, network string, servic
 	addrs, herr := resolver.LookupHost(deadlineCtx, domainName)
 	if herr != nil {
 		err = fmt.Errorf("LookupHost error: %w", herr)
-	} else {
-		response.Host = []FullAddress{}
-
-		for _, addr := range addrs {
-			address := FullAddress{
-				Address: addr,
-			}
-
-			responseHosts, aerr := resolver.LookupAddr(deadlineCtx, address.Address)
-			if aerr != nil {
-				err = fmt.Errorf("LookupAddr error: %w", aerr)
-			} else {
-				address.Hosts = responseHosts
-			}
-
-			response.Host = append(response.Host, address)
-		}
 	}
+
+	response.Host = LookupAddresses(deadlineCtx, addrs, resolver)
 
 	cname, cerr := resolver.LookupCNAME(deadlineCtx, domainName)
 	if cerr != nil {
@@ -172,6 +155,36 @@ func DomainLookup(ctx context.Context, domainName string, network string, servic
 	}
 
 	return &response, err
+}
+
+func LookupAddresses(ctx context.Context, addrs []string, resolver *net.Resolver) []FullAddress {
+	fullAddresses := []FullAddress{}
+
+	for _, addr := range addrs {
+		fullAddress := FullAddress{
+			Address: addr,
+		}
+
+		responseHosts, aerr := resolver.LookupAddr(ctx, fullAddress.Address)
+		if aerr != nil {
+			fullAddress.Error = aerr
+		} else {
+			fullAddress.Hosts = responseHosts
+		}
+
+		fullAddresses = append(fullAddresses, fullAddress)
+	}
+
+	return fullAddresses
+}
+
+func LookupResourceRecord(ctx context.Context, resolver *net.Resolver, rrType string, rrAddr string) ([]string, error) {
+	switch rrType {
+	case "TXT":
+		return resolver.LookupTXT(ctx, rrAddr)
+	default:
+		return nil, fmt.Errorf("Unsupported resource record type: %s", rrType)
+	}
 }
 
 func CreateDeadlinResolver(ctx context.Context, lookupNameServer string,
