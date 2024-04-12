@@ -7,7 +7,7 @@ Go extensions library
 ## Setting up for development
 
 1. Clone Repository
-git clone github.com/mjdusa/go-net-ext
+git clone [https://github.com/mjdusa/go-net-ext](https://github.com/mjdusa/go-net-ext)
 
 2. Setup Pre-commit Hooks
 When you clone this repository to your workstation, make sure to install the [pre-commit](https://pre-commit.com/) hooks. [GitHub Repository](https://github.com/pre-commit/pre-commit)
