@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mjdusa/go-ui-example/pkg/net/ipv4"
+	"github.com/mjdusa/go-net-ext/pkg/net/ipv4"
 )
 
 const (

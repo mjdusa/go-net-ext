@@ -1,4 +1,4 @@
-package httpex
+package http
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/mjdusa/go-ext/pkg/fileex"
+	"github.com/mjdusa/go-ex/pkg/fileex"
 )
 
 func WrapError(message string, err error) error {
