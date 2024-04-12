@@ -5,17 +5,36 @@
 *.exe
 *.exe~
 *.dll
-*.so
 *.dylib
+*.o
+*.a
+*.so
+*.prof
 
 # Test binary, built with `go test -c`
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Download cache file
+*.cache
+
+# IDE specific metadata
+.idea/
+#.vscode/
+
+# Apple fodder
+.DS_Store
+
+# Test and Lint output files
 *.out
+*.gcov
+*.lcov
+*.log
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Temp files directory
+tmp/
 
-# Go workspace file
-go.work
+# exclude go lang build destination directory
+dist/
+
+# exclude go lang vendor folder added in go 1.18
+vendor/
