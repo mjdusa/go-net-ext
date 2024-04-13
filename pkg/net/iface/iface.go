@@ -15,7 +15,7 @@ func Print() (*string, error) {
 
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("net.Interfaces() error : %w", err)
 	}
 
 	for _, iface := range ifaces {
@@ -117,7 +117,7 @@ func NewLsdns() *LsDNS {
 func (ls *LsDNS) ReverseLookup(ip string) error {
 	names, err := ls.resolver.LookupAddr(context.Background(), ip)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolver.LookupAddr(%s) error : %w", ip, err)
 	}
 
 	fmt.Println("Reverse lookup")
@@ -131,7 +131,7 @@ func (ls *LsDNS) ReverseLookup(ip string) error {
 func (ls *LsDNS) HostLookup(host string) error {
 	addrs, err := ls.resolver.LookupHost(context.Background(), host)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolver.LookupHost(%s) error : %w", host, err)
 	}
 
 	fmt.Println("Host lookup")
@@ -145,7 +145,7 @@ func (ls *LsDNS) HostLookup(host string) error {
 func (ls *LsDNS) NameServerLookup(host string) error {
 	nses, err := ls.resolver.LookupNS(context.Background(), host)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolver.LookupNS(%s) error : %w", host, err)
 	}
 	fmt.Println("NS lookup")
 	fmt.Println("---------")
@@ -158,7 +158,7 @@ func (ls *LsDNS) NameServerLookup(host string) error {
 func (ls *LsDNS) MXLookup(host string) error {
 	mxes, err := ls.resolver.LookupMX(context.Background(), host)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolver.LookupMX(%s) error : %w", host, err)
 	}
 	fmt.Println("MX lookup")
 	fmt.Println("---------")
@@ -171,7 +171,7 @@ func (ls *LsDNS) MXLookup(host string) error {
 func (ls *LsDNS) TXTLookup(host string) error {
 	txts, err := ls.resolver.LookupTXT(context.Background(), host)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolver.LookupTXT(%s) error : %w", host, err)
 	}
 	fmt.Println("TXT lookup")
 	fmt.Println("---------")
@@ -184,7 +184,7 @@ func (ls *LsDNS) TXTLookup(host string) error {
 func (ls *LsDNS) CNameLookup(host string) error {
 	name, err := ls.resolver.LookupCNAME(context.Background(), host)
 	if err != nil {
-		return err
+		return fmt.Errorf("resolver.LookupCNAME(%s) error : %w", host, err)
 	}
 	fmt.Println("CNAME lookup")
 	fmt.Println("------------")

@@ -53,7 +53,7 @@ func IsIPv4(ipAddressStr string) bool {
 }
 
 // Convert IPv4 to uint32.
-func IPv4ToUint32(ipv4 string) uint32 {
+func ToUint32(ipv4 string) uint32 {
 	ipOctets := [IPv4AddressLength]uint64{}
 
 	for i, v := range strings.SplitN(ipv4, IPv4OctetSeparator, IPv4AddressLength) {
@@ -66,8 +66,8 @@ func IPv4ToUint32(ipv4 string) uint32 {
 }
 
 // Convert uint32 to IP.
-func Uint32ToIPv4(ipUint32 uint32) (ip string) {
-	ip = fmt.Sprintf("%d.%d.%d.%d",
+func Uint32ToIPv4(ipUint32 uint32) string {
+	ip := fmt.Sprintf("%d.%d.%d.%d",
 		ipUint32>>Shift3Byte,
 		(ipUint32&BitMask3Byte)>>Shift2Byte,
 		(ipUint32&BitMask2Byte)>>Shift1Byte,

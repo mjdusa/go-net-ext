@@ -1,4 +1,4 @@
-package http
+package httpex
 
 import (
 	"context"
@@ -15,8 +15,8 @@ func WrapError(message string, err error) error {
 	return fmt.Errorf("%s: %w", message, err)
 }
 
-// HTTPGet - HTTP Get from URL.
-func HTTPGet(ctx context.Context, url string, timeout time.Duration) ([]byte, error) {
+// Get - HTTP Get from URL.
+func Get(ctx context.Context, url string, timeout time.Duration) ([]byte, error) {
 	client := http.Client{
 		Timeout: timeout,
 	}
@@ -44,11 +44,11 @@ func HTTPGet(ctx context.Context, url string, timeout time.Duration) ([]byte, er
 	return []byte{}, fmt.Errorf("HTTP Status Code: %d returned", resp.StatusCode)
 }
 
-// HTTPGetFile - HTTP Get from URL.
-func HTTPGetFile(ctx context.Context, url string, timeout time.Duration, fqfn string, perm fs.FileMode) error {
-	data, err := HTTPGet(ctx, url, timeout)
+// GetFile - HTTP Get from URL.
+func GetFile(ctx context.Context, url string, timeout time.Duration, fqfn string, perm fs.FileMode) error {
+	data, err := Get(ctx, url, timeout)
 	if err != nil {
-		return WrapError("HttpGet() error", err)
+		return WrapError("http.Get() error", err)
 	}
 
 	err = fileex.WriteAllFile(fqfn, data, perm)

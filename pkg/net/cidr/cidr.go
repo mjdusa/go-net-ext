@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	CIDRList []string = []string{
+	CIDRList = []string{ //nolint:gochecknoglobals  // Until you can create a const array of strings.
 		"255.255.255.255/32",
 		"255.255.255.254/31",
 		"255.255.255.252/30",
@@ -75,7 +75,7 @@ type IPv4CIDR struct { // CIDR - Classless Inter Domain Routing.
 }
 
 // Parse IPv4 CIDR.
-func ParseIPv4CIDR(fullCIDR string) (cidr *IPv4CIDR, err error) {
+func ParseIPv4CIDR(fullCIDR string) (*IPv4CIDR, error) {
 	// Validate format.
 	cidrParts := strings.Split(fullCIDR, CIDRSeparatorChar)
 	if len(cidrParts) != ExpectedCIDRParts {
@@ -83,7 +83,7 @@ func ParseIPv4CIDR(fullCIDR string) (cidr *IPv4CIDR, err error) {
 	}
 
 	// Validate IPv4.
-	ip := cidrParts[0]
+	ip := cidrParts[0] //nolint:varnamelen  // Variable name is best fit.
 	if !ipv4.IsIPv4(ip) {
 		return nil, fmt.Errorf("invald IPv4 Address [%s]", ip)
 	}
@@ -91,16 +91,18 @@ func ParseIPv4CIDR(fullCIDR string) (cidr *IPv4CIDR, err error) {
 	// Validate CIDR Mask.
 	netBits64, err := strconv.ParseUint(cidrParts[1], ParserBase, Parser8BitSize)
 	if err != nil {
-		return nil, err
-	} else if netBits64 > MaxNetBitSize {
-		return nil, fmt.Errorf("Network bits out of range [%s]", cidrParts[1])
+		return nil, fmt.Errorf("strconv.ParseUint error: %w", err)
+	}
+
+	if netBits64 > MaxNetBitSize {
+		return nil, fmt.Errorf("network bits out of range [%s]", cidrParts[1])
 	}
 
 	ipv4cidr := IPv4CIDR{
 		CIDRNotation: fullCIDR,
 	}
 
-	ipVal := ipv4.IPv4ToUint32(ip)
+	ipVal := ipv4.ToUint32(ip)
 	netBits8 := uint8(netBits64)
 	netBits32 := uint32(netBits64)
 
@@ -108,7 +110,7 @@ func ParseIPv4CIDR(fullCIDR string) (cidr *IPv4CIDR, err error) {
 	ipv4cidr.HostBits = MaxNetBitSize - netBits8 // 0 - 32
 	ipv4cidr.MaxAddresses = PowUint32(PowBase, uint32(ipv4cidr.HostBits))
 	if netBits32 != MaxNetBitSize {
-		ipv4cidr.MaxAddresses = ipv4cidr.MaxAddresses - 2
+		ipv4cidr.MaxAddresses -= 2
 	}
 	ipv4cidr.MaxSubnets = PowUint32(PowBase, uint32(ipv4cidr.HostBits))
 	ipv4cidr.Network = ipVal & netBits32
@@ -118,7 +120,7 @@ func ParseIPv4CIDR(fullCIDR string) (cidr *IPv4CIDR, err error) {
 	ipv4cidr.Network = ipVal & ipv4cidr.Subnet
 	ipv4cidr.CIDRNotation = fmt.Sprintf("%s/%d", ipv4.Uint32ToIPv4(ipv4cidr.Network), ipv4cidr.NetworkBits)
 
-	return &ipv4cidr, err
+	return &ipv4cidr, nil
 }
 
 func PowUint8(x, y uint8) uint8 {
@@ -133,8 +135,9 @@ func PowUint64(x, y uint64) uint64 {
 	return uint64(math.Pow(float64(x), float64(y)))
 }
 
-// Convert IPv4 range into CIDR
-func IPv4RangeToCIDRRange(ipStart string, ipEnd string) (cidrs []string, err error) {
+// Convert IPv4 range into CIDR.
+func IPv4RangeToCIDRRange(ipStart string, ipEnd string) ([]string, error) {
+	cidrs := []string{}
 	cidr2mask := []uint32{
 		0x00000000, 0x80000000, 0xC0000000,
 		0xE0000000, 0xF0000000, 0xF8000000,
@@ -149,11 +152,11 @@ func IPv4RangeToCIDRRange(ipStart string, ipEnd string) (cidrs []string, err err
 		0xFFFFFFFC, 0xFFFFFFFE, 0xFFFFFFFF,
 	}
 
-	ipStartUint32 := ipv4.IPv4ToUint32(ipStart)
-	ipEndUint32 := ipv4.IPv4ToUint32(ipEnd)
+	ipStartUint32 := ipv4.ToUint32(ipStart)
+	ipEndUint32 := ipv4.ToUint32(ipEnd)
 
 	if ipStartUint32 > ipEndUint32 {
-		return []string{}, fmt.Errorf("start IP:%s must be less than end IP:%s", ipStart, ipEnd)
+		return cidrs, fmt.Errorf("start IP:%s must be less than end IP:%s", ipStart, ipEnd)
 	}
 
 	for ipEndUint32 >= ipStartUint32 {
@@ -168,16 +171,16 @@ func IPv4RangeToCIDRRange(ipStart string, ipEnd string) (cidrs []string, err err
 			maxSize--
 		}
 
-		x := math.Log(float64(ipEndUint32-ipStartUint32+1)) / math.Log(2)
-		maxDiff := 32 - int(math.Floor(x))
+		x := math.Log(float64(ipEndUint32-ipStartUint32+1)) / math.Log(2) //nolint:gomnd  // Magic number is best fit.
+		maxDiff := 32 - int(math.Floor(x))                                //nolint:gomnd  // Magic number is best fit.
 		if maxSize < maxDiff {
 			maxSize = maxDiff
 		}
 
 		cidrs = append(cidrs, ipv4.Uint32ToIPv4(ipStartUint32)+CIDRSeparatorChar+strconv.Itoa(maxSize))
 
-		ipStartUint32 += uint32(math.Exp2(float64(32 - maxSize)))
+		ipStartUint32 += uint32(math.Exp2(float64(32 - maxSize))) //nolint:gomnd  // Magic number is best fit.
 	}
 
-	return cidrs, err
+	return cidrs, nil
 }

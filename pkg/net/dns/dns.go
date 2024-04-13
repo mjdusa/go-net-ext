@@ -2,6 +2,7 @@ package dns
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -48,7 +49,7 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 	// Create a custom resolver.
 	resolver := &net.Resolver{
 		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) { //nolint:revive,lll  // Function must implement Dial interface.
 			d := net.Dialer{
 				Timeout: timeout,
 			}
@@ -65,7 +66,7 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 
 	addresses, herr := resolver.LookupHost(deadlineCtx, response.Host)
 	if herr != nil {
-		return &response, herr
+		return &response, fmt.Errorf("resolver.LookupHost(%s) error : %w", response.Host, herr)
 	}
 
 	for _, address := range addresses {
@@ -89,7 +90,8 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 // DomainLookup - network must be one of "ip", "ip4" or "ip6", service "", protocol must be one of "tcp" or "udp".
 func DomainLookup(ctx context.Context, domainName string, network string, service string, protocol string,
 	lookupNameServer string, timeoutMS int64) (*FullDomainResponse, error) {
-	var err error = nil
+	var err error
+
 	response := FullDomainResponse{
 		DomainName:       domainName,
 		LookupNameServer: lookupNameServer,
@@ -137,10 +139,11 @@ func DomainLookup(ctx context.Context, domainName string, network string, servic
 
 	svcHost, srv, serr := resolver.LookupSRV(deadlineCtx, service, protocol, domainName)
 	if serr != nil {
-		if dnserr, ok := serr.(*net.DNSError); ok && dnserr.Err != "no such host" {
+		var dnsError *net.DNSError
+		if errors.As(serr, &dnsError) && serr.Error() != "no such host" {
 			err = fmt.Errorf("LookupSRV error: %w", serr)
 		} else {
-			response.SRVHost = dnserr.Err
+			response.SRVHost = serr.Error()
 		}
 	} else {
 		response.SRVHost = svcHost
@@ -181,18 +184,17 @@ func LookupAddresses(ctx context.Context, addrs []string, resolver *net.Resolver
 func LookupResourceRecord(ctx context.Context, resolver *net.Resolver, rrType string, rrAddr string) ([]string, error) {
 	switch rrType {
 	case "TXT":
-		return resolver.LookupTXT(ctx, rrAddr)
+		return resolver.LookupTXT(ctx, rrAddr) //nolint:wrapcheck  // No need to wrap the error.
 	default:
-		return nil, fmt.Errorf("Unsupported resource record type: %s", rrType)
+		return []string{}, fmt.Errorf("unsupported resource record type: %s", rrType)
 	}
 }
 
-func CreateDeadlinResolver(ctx context.Context, lookupNameServer string,
-	timeout time.Duration) *net.Resolver {
+func CreateDeadlinResolver(ctx context.Context, lookupNameServer string, timeout time.Duration) *net.Resolver { //nolint:revive,lll  // Function must implement Dial interface.
 	// create a custom resolver
 	resolver := net.Resolver{
 		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) { //nolint:revive,lll  // Function must implement Dial interface.
 			d := net.Dialer{
 				Timeout: timeout,
 			}
