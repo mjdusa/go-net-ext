@@ -80,7 +80,7 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 }
 
 func CreateCustomResolver(preferGo bool, timeout time.Duration, lookupNameServer string) *net.Resolver {
-	resolver := net.Resolver{ //nolint:revive  // Function must implement Resolver interface.
+	resolver := net.Resolver{
 		PreferGo: preferGo,
 		Dial: func(ctx context.Context, network string, address string) (net.Conn, error) { //nolint:revive,lll  // Function must implement Dial interface.
 			dlr := net.Dialer{
