@@ -47,15 +47,7 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 	timeout := time.Millisecond * time.Duration(response.TimeoutMS)
 
 	// Create a custom resolver.
-	resolver := &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) { //nolint:revive,lll  // Function must implement Dial interface.
-			d := net.Dialer{
-				Timeout: timeout,
-			}
-			return d.DialContext(ctx, network, response.LookupNameServer)
-		},
-	}
+	resolver := CreateCustomResolver(true, timeout, response.LookupNameServer)
 
 	deadlineCtx := ctx
 	if deadline, ok := ctx.Deadline(); ok {
@@ -87,6 +79,21 @@ func FullResolve(ctx context.Context, host string, lookupNameServer string,
 	return &response, nil
 }
 
+func CreateCustomResolver(preferGo bool, timeout time.Duration, lookupNameServer string) *net.Resolver {
+	resolver := net.Resolver{ //nolint:revive  // Function must implement Resolver interface.
+		PreferGo: preferGo,
+		Dial: func(ctx context.Context, network string, address string) (net.Conn, error) { //nolint:revive,lll  // Function must implement Dial interface.
+			dlr := net.Dialer{
+				Timeout: timeout,
+			}
+
+			return dlr.DialContext(ctx, network, lookupNameServer)
+		},
+	}
+
+	return &resolver
+}
+
 // DomainLookup - network must be one of "ip", "ip4" or "ip6", service "", protocol must be one of "tcp" or "udp".
 func DomainLookup(ctx context.Context, domainName string, network string, service string, protocol string,
 	lookupNameServer string, timeoutMS int64) (*FullDomainResponse, error) {
@@ -99,7 +106,7 @@ func DomainLookup(ctx context.Context, domainName string, network string, servic
 	}
 
 	timeout := time.Millisecond * time.Duration(response.TimeoutMS)
-	resolver := CreateDeadlinResolver(ctx, response.LookupNameServer, timeout)
+	resolver := CreateCustomResolver(true, timeout, response.LookupNameServer)
 	deadlineCtx := CreateDeadlinContext(ctx, timeout)
 
 	addrs, herr := resolver.LookupHost(deadlineCtx, domainName)
@@ -190,21 +197,6 @@ func LookupResourceRecord(ctx context.Context, resolver *net.Resolver, rrType st
 	}
 }
 
-func CreateDeadlinResolver(ctx context.Context, lookupNameServer string, timeout time.Duration) *net.Resolver { //nolint:revive,lll  // Function must implement Dial interface.
-	// create a custom resolver
-	resolver := net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) { //nolint:revive,lll  // Function must implement Dial interface.
-			d := net.Dialer{
-				Timeout: timeout,
-			}
-			return d.DialContext(ctx, network, lookupNameServer)
-		},
-	}
-
-	return &resolver
-}
-
 func CreateDeadlinContext(ctx context.Context, timeout time.Duration) context.Context {
 	deadlineCtx := ctx
 
@@ -218,7 +210,6 @@ func CreateDeadlinContext(ctx context.Context, timeout time.Duration) context.Co
 }
 
 /*
-
 func Address(addr string, indent int) string {
 	indentStr := strings.Repeat(" ", indent)
 	response := ""
