@@ -33,6 +33,9 @@
 # Temp files directory
 tmp/
 
+# exclude go lang build directory
+build/
+
 # exclude go lang build destination directory
 dist/
 
